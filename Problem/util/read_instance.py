@@ -1,16 +1,14 @@
-#!/usr/bin/python
-# encoding=utf8
-from datetime import datetime
 import numpy as np
-class Read():
-# -*- coding: utf-8 -*-
 
-    def __init__(self, file):
+
+class Read:
+    def __init__(self, filePath):
+        print('hola')
         self.__c = []
         self.__r = []
         self.rows = 0
         self.columns = 0
-        self.LeerInstancia(file)
+        self.LeerInstancia(filePath)
     
     def get_c(self):
         return self.__c

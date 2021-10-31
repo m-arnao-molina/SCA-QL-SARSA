@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Oct  1 22:02:44 2019
-
-@author: mauri
-"""
 import numpy as np
 from . import read_instance as r_instance
 from . import binarizationstrategy as _binarization

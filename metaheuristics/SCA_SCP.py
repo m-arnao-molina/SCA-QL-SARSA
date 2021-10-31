@@ -1,26 +1,25 @@
 import os
 import numpy as np
 import time
-import json
-from database.Database import Database
-from envs import env
+from dotenv import dotenv_values
 from datetime import datetime
+from database.DatabaseORM import Database
 from Problem.util import read_instance as Instance
 from Problem import SCP as Problem
 from Metrics import Diversidad as dv
-
 # RepairGPU
 from Problem.util import SCPProblem
 
-# Definicion Environments Vars
+config = dotenv_values('.env')
 workdir = os.path.abspath(os.getcwd())
-workdirInstance = workdir + env('DIR_INSTANCES')
+workdirInstance = workdir + config['DIR_INSTANCES']
 
-database = Database()
+db = Database()
+
 
 
 def SCA_SCP(executionId, instanceFile, instanceDirectory, population, maxIterations, discretizacionScheme, repair):
-    database.startExecution(executionId, datetime.now())
+    db.startExecution(executionId, datetime.now())
 
     instancePath = workdirInstance + instanceDirectory + instanceFile
 
@@ -32,6 +31,12 @@ def SCA_SCP(executionId, instanceFile, instanceDirectory, population, maxIterati
 
     problemaGPU = SCPProblem.SCPProblem(instancePath)
     pondRestricciones = 1 / np.sum(problemaGPU.instance.get_r(), axis=1)
+
+    #print(problemaGPU.instance.get_c())
+    #print(instance.get_r())
+    #print(problemaGPU.instance.get_r())
+    # print(pondRestricciones)
+    print(np.sum(problemaGPU.instance.get_r(), axis=1))
 
     matrizCobertura = np.array(instance.get_r())
     vectorCostos = np.array(instance.get_c())
@@ -61,10 +66,16 @@ def SCA_SCP(executionId, instanceFile, instanceDirectory, population, maxIterati
     diversidades, maxDiversidades, PorcentajeExplor, PorcentajeExplot, state = dv.ObtenerDiversidadYEstado(matrixBin,
                                                                                                            maxDiversidades)
 
-    inicio = datetime.now()
+    startDatetime = datetime.now()
     timerStartResult = time.time()
     iterationsData = []
     for iterationNumber in range(0, maxIterations):
+        iterationData = {
+            'iterationNumber': iterationNumber,
+            'executionId': executionId,
+            'startDatetime': datetime.now()
+        }
+
         # print(f'iterationNumber: {iterationNumber}')
         processTime = time.process_time()
         timerStart = time.time()
@@ -101,41 +112,42 @@ def SCA_SCP(executionId, instanceFile, instanceDirectory, population, maxIterati
         walltimeEnd = np.round(time.time() - timerStart, 6)
         processTimeEnd = np.round(time.process_time() - processTime, 6)
 
-        iterationData = {
-            'execution_id': executionId,
-            'iteration_number': iterationNumber,
-            'best_fitness': BestFitnes,
-            'parameters': json.dumps({
+        iterationData.update({
+            'bestFitness': 0,
+            'avgFitness': 0,
+            'fitnessBestIteration': 0,
+            'parameters': {
                 'fitness': BestFitnes,
                 'clock_Time': walltimeEnd,
                 'process_time': processTimeEnd,
                 'DS': DS,
                 'diversities': str(diversidades),
                 'exploration_percentage': str(PorcentajeExplor),
-                # 'exploitation_percentage': str(PorcentajeExplot),
+                #'exploitation_percentage': str(PorcentajeExplot),
                 'repairs_number': str(numReparaciones)
-                # 'state': str(state)
-            })
-        }
-
+                #'state': str(state)
+            },
+            'endDatetime': datetime.now(),
+        })
         iterationsData.append(iterationData)
-        if iterationNumber % 100 == 0 and database.insertIteration(iterationsData):
+
+        if iterationNumber % 100 == 0 and db.insertIterations(iterationsData):
             iterationsData.clear()
 
     # Si es que queda alguna iteración para insertar
     if len(iterationsData) > 0:
-        database.insertIteration(iterationsData)
+        db.insertIterations(iterationsData)
 
     # Actualiza la tabla execution_results, sin mejor_solucion
-    executionResultData = {
-        'execution_id': executionId,
-        'fitness': BestFitnes,
-        'start_datetime': inicio,
-        'end_datetime': datetime.now()
-    }
-    database.insertExecutionResult(executionResultData)
+    db.insertExecutionResult(
+        fitness=float(BestFitness),
+        bestSolution=None,
+        executionId=executionId,
+        startDatetime=startDatetime,
+        endDatetime=datetime.now()
+    )
 
-    if not database.endExecution(executionId, datetime.now()):
+    if not db.endExecution(executionId, datetime.now()):
         return False
 
     return True

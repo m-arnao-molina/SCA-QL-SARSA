@@ -6,9 +6,9 @@ CREATE TABLE executions (
     id INTEGER DEFAULT nextval('executions_id_seq'::regclass) NOT NULL,
     algorithm_code_name CHARACTER VARYING(100),
     parameters TEXT,
+    status CHARACTER VARYING(20),
     start_datetime TIMESTAMP(6) WITHOUT TIME ZONE,
     end_datetime TIMESTAMP(6) WITHOUT TIME ZONE,
-    status CHARACTER VARYING(20),
     PRIMARY KEY (id)
 );
 
@@ -31,9 +31,9 @@ CREATE TABLE execution_results (
     id BIGINT DEFAULT nextval('execution_results_id_seq'::regclass) NOT NULL,
     execution_id BIGINT,
     fitness DOUBLE PRECISION,
+    best_solution TEXT,
     start_datetime TIMESTAMP(6) WITHOUT TIME ZONE,
     end_datetime TIMESTAMP(6) WITHOUT TIME ZONE,
-    best_solution TEXT,
     PRIMARY KEY (id),
     CONSTRAINT execution_result_execution_fk FOREIGN KEY (execution_id) REFERENCES "executions" ("id")
 );

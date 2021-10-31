@@ -1,29 +1,28 @@
-import json
-from database.Database import Database
+from database.DatabaseORM import Database
 
-database = Database()
+db = Database()
 
 algorithms = {
     'SCP': [
-        {'code_name': 'SCA_SCP_BCL1', 'reward_type': None},
-        # {'code_name': 'SCA_SCP_MIR2', 'reward_type': None},
-        # {'code_name': 'SCA_SCP_QL1', 'reward_type': 'withPenalty1'},
-        # {'code_name': 'SCA_SCP_QL2', 'reward_type': 'withoutPenalty1'},
-        # {'code_name': 'SCA_SCP_QL3', 'reward_type': 'globalBest'},
-        # {'code_name': 'SCA_SCP_QL4', 'reward_type': 'rootAdaptation'},
-        # {'code_name': 'SCA_SCP_QL5', 'reward_type': 'escalatingMultiplicativeAdaptation'}
+        {'codeName': 'SCA_SCP_BCL1', 'rewardType': None},
+        # {'codeName': 'SCA_SCP_MIR2', 'rewardType': None},
+        # {'codeName': 'SCA_SCP_QL1', 'rewardType': 'withPenalty1'},
+        # {'codeName': 'SCA_SCP_QL2', 'rewardType': 'withoutPenalty1'},
+        # {'codeName': 'SCA_SCP_QL3', 'rewardType': 'globalBest'},
+        # {'codeName': 'SCA_SCP_QL4', 'rewardType': 'rootAdaptation'},
+        # {'codeName': 'SCA_SCP_QL5', 'rewardType': 'escalatingMultiplicativeAdaptation'}
     ],
     'KP': [
-        # {'code_name': 'SCA_KPP_QL1', 'reward_type': 'withPenalty1'},
-        # {'code_name': 'SCA_KPP_QL2', 'reward_type': 'withoutPenalty1'},
-        # {'code_name': 'SCA_KPP_QL3', 'reward_type': 'globalBest'},
-        # {'code_name': 'SCA_KPP_QL4', 'reward_type': 'rootAdaptation'},
-        # {'code_name': 'SCA_KPP_QL5', 'reward_type': 'escalatingMultiplicativeAdaptation'},
-        # {'code_name': 'SCA_KPP_SA1', 'reward_type': 'withPenalty1'},
-        # {'code_name': 'SCA_KPP_SA2', 'reward_type': 'withoutPenalty1'},
-        # {'code_name': 'SCA_KPP_SA3', 'reward_type': 'globalBest'},
-        # {'code_name': 'SCA_KPP_SA4', 'reward_type': 'rootAdaptation'},
-        # {'code_name': 'SCA_KPP_SA5', 'reward_type': 'escalatingMultiplicativeAdaptation'},
+        # {'codeName': 'SCA_KPP_QL1', 'rewardType': 'withPenalty1'},
+        # {'codeName': 'SCA_KPP_QL2', 'rewardType': 'withoutPenalty1'},
+        # {'codeName': 'SCA_KPP_QL3', 'rewardType': 'globalBest'},
+        # {'codeName': 'SCA_KPP_QL4', 'rewardType': 'rootAdaptation'},
+        # {'codeName': 'SCA_KPP_QL5', 'rewardType': 'escalatingMultiplicativeAdaptation'},
+        # {'codeName': 'SCA_KPP_SA1', 'rewardType': 'withPenalty1'},
+        # {'codeName': 'SCA_KPP_SA2', 'rewardType': 'withoutPenalty1'},
+        # {'codeName': 'SCA_KPP_SA3', 'rewardType': 'globalBest'},
+        # {'codeName': 'SCA_KPP_SA4', 'rewardType': 'rootAdaptation'},
+        # {'codeName': 'SCA_KPP_SA5', 'rewardType': 'escalatingMultiplicativeAdaptation'},
     ]
 }
 
@@ -46,38 +45,65 @@ instances = {
 
 runs = 1
 # runs = 11
-population = 40
+populationSize = 40
 maxIterations = 500
 qlAlpha = 0.1
 qlGamma = 0.4
 policy = 'softMax-rulette-elitist'      # Puede ser 'e-greedy', 'greedy', 'e-soft', 'softMax-rulette', 'softMax-rulette-elitist'
 qlAlphaType = 'static'                  # Puede ser 'static', 'iteration', 'visits'
-repair = 2                              # 1: Simple; 2: Compleja; 3: RepairGPU
-
+repairType = 2                              # 1: Simple; 2: Compleja; 3: RepairGPU
+# """
 for run in range(runs):
     for problem, problemAlgorithms in algorithms.items():
         for problemAlgorithm in problemAlgorithms:
             for instanceName in instances[problem]['names']:
-                executionData = {
-                    'algorithm_code_name': problemAlgorithm['code_name'],
-                    'parameters': json.dumps({
-                        'instance_name': instanceName,
-                        'instance_file': instanceName + '.txt',
-                        'instance_directory': instances[problem]['directory'],
-                        'population': population,
-                        'max_iterations': maxIterations,
-                        'discretization_scheme': 'V4,Elitist',
-                        'repair': repair,
+                execution = db.insertExecution(
+                    algorithmCodeName=problemAlgorithm['codeName'],
+                    parameters={
+                        'instanceName': instanceName,
+                        'instanceFile': instanceName + '.txt',
+                        'instanceDirectory': instances[problem]['directory'],
+                        'populationSize': populationSize,
+                        'maxIterations': maxIterations,
+                        'discretizationScheme': {
+                            'transferFunction': 'V4',
+                            'binarizationOperator': 'ELITIST'
+                        },
+                        # 'discretization_scheme': 'V4,Elitist',
+                        'repairType': repairType,
                         'policy': policy,
-                        'reward_type': problemAlgorithm['reward_type'],
-                        'ql_alpha': qlAlpha,
-                        'ql_gamma': qlGamma,
-                        'ql_alpha_type': qlAlphaType
-                    }),
-                    'status': 'PENDING'
-                }
-                result = database.insertExecution(executionData)
-                executionId = result.fetchone()[0]
-                print(f'Execution ID: {executionId}')
+                        'rewardType': problemAlgorithm['rewardType'],
+                        'qlAlpha': qlAlpha,
+                        'qlGamma': qlGamma,
+                        'qlAlphaType': qlAlphaType
+                    },
+                    status='PENDING'
+                )
+                print(f'Execution ID: {execution.id}')
 
+"""
+for run in range(runs):
+    for problem, problemAlgorithms in algorithms.items():
+        for problemAlgorithm in problemAlgorithms:
+            for instanceName in instances[problem]['names']:
+                execution = db.insertExecution(
+                    algorithmCodeName=problemAlgorithm['codeName'],
+                    parameters={
+                        'instanceName': instanceName,
+                        'instanceFile': instanceName + '.txt',
+                        'instanceDirectory': instances[problem]['directory'],
+                        'populationSize': populationSize,
+                        'maxIterations': maxIterations,
+                        'discretizationScheme': 'V4,Elitist',
+                        'repairType': repairType,
+                        'policy': policy,
+                        'rewardType': problemAlgorithm['rewardType'],
+                        'qlAlpha': qlAlpha,
+                        'qlGamma': qlGamma,
+                        'qlAlphaType': qlAlphaType
+                    },
+                    status='PENDING'
+                )
+                print(f'Execution ID: {execution.id}')
+"""
 print('Executions created successfully')
