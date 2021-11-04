@@ -8,7 +8,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class Database:
-
     def __init__(self):
         config = dotenv_values('.env')
         dbMotor = config['DB_MOTOR']

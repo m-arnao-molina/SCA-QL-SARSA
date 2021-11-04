@@ -51,7 +51,7 @@ qlAlpha = 0.1
 qlGamma = 0.4
 policy = 'softMax-rulette-elitist'      # Puede ser 'e-greedy', 'greedy', 'e-soft', 'softMax-rulette', 'softMax-rulette-elitist'
 qlAlphaType = 'static'                  # Puede ser 'static', 'iteration', 'visits'
-repairType = 2                              # 1: Simple; 2: Compleja; 3: RepairGPU
+repairType = 2                          # 1: Simple; 2: Compleja; 3: RepairGPU
 # """
 for run in range(runs):
     for problem, problemAlgorithms in algorithms.items():
@@ -69,7 +69,6 @@ for run in range(runs):
                             'transferFunction': 'V4',
                             'binarizationOperator': 'ELITIST'
                         },
-                        # 'discretization_scheme': 'V4,Elitist',
                         'repairType': repairType,
                         'policy': policy,
                         'rewardType': problemAlgorithm['rewardType'],

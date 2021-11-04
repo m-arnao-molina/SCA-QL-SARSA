@@ -1,50 +1,25 @@
 import numpy as np
 from discretizations.DiscretizationScheme import DiscretizationScheme
 from problems.Problem import Problem
+from problems.repairs.RepairScp import RepairScp
 from Problem.repair import cumpleRestricciones as cumpleGPU
 from Problem.repair.ReparaStrategy import ReparaStrategy
 
 class Scp(Problem):
-    def __init__(self, instanceName, instancePath):
+    def __init__(self, instanceName, instancePath, populationSize, discretizationScheme, repairType):
         super().__init__(instanceName, instancePath)
+        self.populationSize = populationSize
+        self.discretizationScheme = discretizationScheme
+        self.repairType = repairType
         self.costs = np.array([], dtype=np.int32)
         self.constraints = np.array([[]], dtype=np.int32)
-
-    def readInstance(self):
+        self.repairsQuantity = 0
         self.globalOptimum = self.getGlobalOptimum()
-        file = open(self.instancePath, 'r')
-
-        # Leer dimensiones
-        line = file.readline().split()
-        rows = int(line[0])
-        columns = int(line[1])
-
-        # Leer costos
-        line = file.readline()
-        costValuesCount = 0
-        while line != '' and costValuesCount < columns:
-            costValues = np.array(line.split(), dtype=np.int32)
-            self.costs = np.concatenate((self.costs, costValues))
-            costValuesCount += len(costValues)
-            line = file.readline()
-
-        # Leer restricciones
-        self.constraints = np.zeros((rows, columns), dtype=np.int32)
-        row = 0
-        while line != '':
-            oneValuesQuantity = int(line)
-            oneValuesCount = 0
-            line = file.readline()
-            line = line.replace('\n', '').replace("\\n'", '')
-            while line != '' and oneValuesCount < oneValuesQuantity:
-                columns = line.split()
-                for i in range(len(columns)):
-                    column = int(columns[i]) - 1
-                    self.constraints[row][column] = 1
-                    oneValuesCount += 1
-                line = file.readline()
-            row += 1
-        file.close()
+        self.population = np.random.uniform(low=-1.0, high=1.0, size=(self.populationSize, self.costs.shape[0]))
+        self.binMatrix = np.random.randint(low=0, high=2, size=(self.populationSize, self.costs.shape[0]))
+        self.fitness = np.zeros(self.populationSize)
+        self.solutionsRanking = np.zeros(self.populationSize)
+        self.weightConstraints = np.array([], dtype=np.float)
 
     def getGlobalOptimum(self):
         instances = {
@@ -121,36 +96,74 @@ class Scp(Problem):
 
         return None
 
-    # action : esquema de discretizacion DS
-    def process(
-        self, population, binMatrix, solutionsRanking, costs, constraints, discretizationScheme, repairType,
-        weightConstraints, *args, **kwargs
-    ):
+    def readInstance(self):
+        file = open(self.instancePath, 'r')
+
+        # Leer dimensiones
+        line = file.readline().split()
+        rows = int(line[0])
+        columns = int(line[1])
+
+        # Leer costos
+        line = file.readline()
+        costValuesCount = 0
+        while line != '' and costValuesCount < columns:
+            costValues = np.array(line.split(), dtype=np.int32)
+            self.costs = np.concatenate((self.costs, costValues))
+            costValuesCount += len(costValues)
+            line = file.readline()
+
+        # Leer restricciones
+        self.constraints = np.zeros((rows, columns), dtype=np.int32)
+        row = 0
+        while line != '':
+            oneValuesQuantity = int(line)
+            oneValuesCount = 0
+            line = file.readline()
+            line = line.replace('\n', '').replace("\\n'", '')
+            while line != '' and oneValuesCount < oneValuesQuantity:
+                columns = line.split()
+                for i in range(len(columns)):
+                    column = int(columns[i]) - 1
+                    self.constraints[row][column] = 1
+                    oneValuesCount += 1
+                line = file.readline()
+            row += 1
+        file.close()
+        self.refreshComputedAttributes()
+
+    def refreshComputedAttributes(self):
+        self.population = np.random.uniform(low=-1.0, high=1.0, size=(self.populationSize, self.costs.shape[0]))
+        self.binMatrix = np.random.randint(low=0, high=2, size=(self.populationSize, self.costs.shape[0]))
+        self.fitness = np.zeros(self.populationSize)
+        self.solutionsRanking = np.zeros(self.populationSize)
+        self.weightConstraints = 1 / np.sum(self.constraints, axis=1)
+
+    def process(self, *args, **kwargs):
         # Binarización de 2 pasos
-        binMatrix = DiscretizationScheme(
-            population, binMatrix, solutionsRanking, discretizationScheme['transferFunction'],
-            discretizationScheme['binarizationOperator']
+        self.binMatrix = DiscretizationScheme(
+            self.population, self.binMatrix, self.solutionsRanking, self.discretizationScheme['transferFunction'],
+            self.discretizationScheme['binarizationOperator']
         ).binarize()
 
-        # Reparamos
-        if repairType == 3:  # Si reparamos con GPU
-            matrizSinReparar = binMatrix
-            binMatrix = cumpleGPU.reparaSoluciones(binMatrix, constraints, costs, weightConstraints)
-            matrizReparada = binMatrix
-            repairsQuantity = np.sum(matrizReparada - matrizSinReparar)
-
-        else:  # Si reparamos con CPU simple o complejo
-            repair = ReparaStrategy(constraints, costs, constraints.shape[0], constraints.shape[1])
-            matrizSinReparar = binMatrix
-            for solucion in range(binMatrix.shape[0]):
-                if repair.cumple(binMatrix[solucion]) == 0:
-                    binMatrix[solucion] = \
-                    repair.repara_one(binMatrix[solucion], repairType, None, weightConstraints)[0]
-            matrizReparada = binMatrix
-            repairsQuantity = np.sum(matrizReparada - matrizSinReparar)
+        # Reparación
+        if self.repairType == 3:  # Si se repara con GPU
+            unrepairedBinMatrix = self.binMatrix.copy()
+            self.binMatrix = cumpleGPU.reparaSoluciones(
+                self.binMatrix, self.constraints, self.costs, self.weightConstraints
+            )
+            self.repairsQuantity = np.sum(self.binMatrix - unrepairedBinMatrix)
+        else:  # Si se repara con CPU simple o compleja
+            repairScp = RepairScp(self.repairType, self.constraints, self.costs)
+            unrepairedBinMatrix = self.binMatrix.copy()
+            for solution in range(self.binMatrix.shape[0]):
+                if not repairScp.meets(self.binMatrix[solution]):
+                    self.binMatrix[solution] = repairScp.repair(self.binMatrix[solution])[0]
+            self.repairsQuantity = np.sum(self.binMatrix - unrepairedBinMatrix)
 
         # Calculamos Fitness
-        fitness = np.sum(np.multiply(binMatrix, costs), axis=1)
-        solutionsRanking = np.argsort(fitness)  # rankings de los mejores fitness
+        self.fitness = np.sum(np.multiply(self.binMatrix, self.costs), axis=1)
+        self.solutionsRanking = np.argsort(self.fitness)  # rankings de los mejores fitness
 
-        return binMatrix, fitness, solutionsRanking, repairsQuantity
+    def repair(self):
+        pass

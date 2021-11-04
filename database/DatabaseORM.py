@@ -20,7 +20,6 @@ class DatabaseMeta(type):
 
 
 class Database(metaclass=DatabaseMeta):
-
     def __init__(self):
         config = dotenv_values('.env')
         dbMotor = config['DB_MOTOR']

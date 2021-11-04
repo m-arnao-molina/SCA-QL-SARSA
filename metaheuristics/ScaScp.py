@@ -2,33 +2,25 @@ import numpy as np
 import time
 from datetime import datetime
 from database.DatabaseORM import Database
-from Problem.util import read_instance as Instance
-from Problem import SCP as Problem
 from Metrics import Diversidad as dv
-# RepairGPU
-from Problem.util import SCPProblem
 
 from metaheuristics.Metaheuristic import Metaheuristic
 from problems.Scp import Scp
 
 db = Database()
 
+
 class ScaScp(Metaheuristic):
     def process(self, *args, **kwargs):
-        #db.startExecution(self.executionId, datetime.now())
+        db.startExecution(self.executionId, datetime.now())
 
         if not self.validateInstance():
             return False
 
-        scp = Scp(self.instanceName, self.instancePath)
+        scp = Scp(self.instanceName, self.instancePath, self.populationSize, self.discretizationScheme, self.repairType)
         scp.readInstance()
+        scp.process()
 
-        # problemaGPU = SCPProblem.SCPProblem(self.instancePath)
-        # pondRestricciones = 1 / np.sum(problemaGPU.instance.get_r(), axis=1)
-
-        weightConstraints = 1 / np.sum(scp.constraints, axis=1)  # pondRestricciones
-        coverageMatrix = scp.constraints  # coverageMatrix
-        dim = len(scp.costs)
         a = 2
 
         # Variables de diversidad
@@ -38,38 +30,19 @@ class ScaScp(Metaheuristic):
         PorcentajeExplot = []
         state = []
 
-        # Generar población inicial
-        population = np.random.uniform(low=-1.0, high=1.0, size=(self.populationSize, dim))
-        # matrixBin = np.zeros((self.populationSize,dim))
-        binMatrix = np.random.randint(low=0, high=2, size=(self.populationSize, dim))
-        fitness = np.zeros(self.populationSize)
-        solutionsRanking = np.zeros(self.populationSize)
-        # binMatrix, fitness, solutionsRanking, numReparaciones = Problem.SCP(
-        #     population, binMatrix, solutionsRanking, scp.costs, scp.constraints, self.discretizationScheme,
-        #     self.repairType, problemaGPU, weightConstraints
-        # )
-
-        binMatrix, fitness, solutionsRanking, repairsQuantity = scp.process(
-            population, binMatrix, solutionsRanking, scp.costs, scp.constraints, self.discretizationScheme,
-            self.repairType, weightConstraints
-        )
-
-        print({
-            'binMatrix': binMatrix,
-            'fitness': fitness,
-            'solutionsRanking': solutionsRanking,
-            'repairsQuantity': repairsQuantity
-        })
-
-
-        return True
-
         diversidades, maxDiversidades, PorcentajeExplor, PorcentajeExplot, state = dv.ObtenerDiversidadYEstado(
-            binMatrix,maxDiversidades
+            scp.binMatrix, maxDiversidades
         )
+
+        #print({
+        #    'diversidades': diversidades,
+        #    'maxDiversidades': maxDiversidades,
+        #    'PorcentajeExplor': PorcentajeExplor,
+        #    'PorcentajeExplot': PorcentajeExplot,
+        #    'state': state
+        #})
 
         startDatetime = datetime.now()
-        timerStartResult = time.time()
         iterationsData = []
         for iterationNumber in range(0, self.maxIterations):
             iterationData = {
@@ -78,39 +51,38 @@ class ScaScp(Metaheuristic):
                 'startDatetime': datetime.now()
             }
 
-            # print(f'iterationNumber: {iterationNumber}')
             processTime = time.process_time()
             timerStart = time.time()
 
             # SCA
             r1 = a - iterationNumber * (a / self.maxIterations)
-            r4 = np.random.uniform(low=0.0, high=1.0, size=population.shape[0])
-            r2 = (2 * np.pi) * np.random.uniform(low=0.0, high=1.0, size=population.shape)
-            r3 = np.random.uniform(low=0.0, high=2.0, size=population.shape)
-            bestRowAux = solutionsRanking[0]
-            Best = population[bestRowAux]
-            BestBinary = binMatrix[bestRowAux]
-            BestFitness = np.min(fitness)
-            population[r4 < 0.5] = population[r4 < 0.5] + np.multiply(r1, np.multiply(np.sin(r2[r4 < 0.5]), np.abs(
-                np.multiply(r3[r4 < 0.5], Best) - population[r4 < 0.5])))
-            population[r4 >= 0.5] = population[r4 >= 0.5] + np.multiply(r1, np.multiply(np.cos(r2[r4 >= 0.5]), np.abs(
-                np.multiply(r3[r4 >= 0.5], Best) - population[r4 >= 0.5])))
-            # population[bestRow] = Best
+            r4 = np.random.uniform(low=0.0, high=1.0, size=scp.population.shape[0])
+            r2 = (2 * np.pi) * np.random.uniform(low=0.0, high=1.0, size=scp.population.shape)
+            r3 = np.random.uniform(low=0.0, high=2.0, size=scp.population.shape)
+            bestRowAux = scp.solutionsRanking[0]
+            Best = scp.population[bestRowAux]
+            BestBinary = scp.binMatrix[bestRowAux]
+            BestFitness = np.min(scp.fitness)
+            scp.population[r4 < 0.5] = scp.population[r4 < 0.5] + np.multiply(r1, np.multiply(np.sin(r2[r4 < 0.5]), np.abs(
+                np.multiply(r3[r4 < 0.5], Best) - scp.population[r4 < 0.5])))
+            scp.population[r4 >= 0.5] = scp.population[r4 >= 0.5] + np.multiply(r1, np.multiply(np.cos(r2[r4 >= 0.5]), np.abs(
+                np.multiply(r3[r4 >= 0.5], Best) - scp.population[r4 >= 0.5])))
+            # scp.population[bestRow] = Best
 
             # Binarizamos y evaluamos el fitness de todas las soluciones de la iteración t
-            binMatrix, fitness, solutionsRanking, repairsQuantity = Problem.SCP(
-                population, binMatrix, solutionsRanking, scp.costs, coverageMatrix, self.discretizationScheme,
-                self.repairType, problemaGPU, weightConstraints
-            )
+
+            scp.process()
+
 
             # Conservo el Best
-            if fitness[bestRowAux] > BestFitness:
-                fitness[bestRowAux] = BestFitness
-                binMatrix[bestRowAux] = BestBinary
+            if scp.fitness[bestRowAux] > BestFitness:
+                scp.fitness[bestRowAux] = BestFitness
+                scp.binMatrix[bestRowAux] = BestBinary
 
             diversidades, maxDiversidades, PorcentajeExplor, PorcentajeExplot, state = dv.ObtenerDiversidadYEstado(
-                binMatrix, maxDiversidades)
-            BestFitnes = str(np.min(fitness))
+                scp.binMatrix, maxDiversidades
+            )
+            BestFitnes = str(np.min(scp.fitness))
 
             walltimeEnd = np.round(time.time() - timerStart, 6)
             processTimeEnd = np.round(time.process_time() - processTime, 6)
@@ -127,7 +99,7 @@ class ScaScp(Metaheuristic):
                     'diversities': str(diversidades),
                     'exploration_percentage': str(PorcentajeExplor),
                     # 'exploitation_percentage': str(PorcentajeExplot),
-                    'repairsQuantity': str(repairsQuantity)
+                    'repairsQuantity': str(scp.repairsQuantity)
                     # 'state': str(state)
                 },
                 'endDatetime': datetime.now(),

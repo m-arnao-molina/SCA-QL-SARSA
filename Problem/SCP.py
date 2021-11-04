@@ -23,7 +23,7 @@ def SCP(poblacion,matrixBin,solutionsRanking,costos,cobertura,ds,repairType,prob
 
     else: #Si reparamos con CPU simple o complejo
         repair = repara.ReparaStrategy(cobertura,costos,cobertura.shape[0],cobertura.shape[1])
-        matrizSinReparar = matrixBin
+        matrizSinReparar = matrixBin.copy()
         for solucion in range(matrixBin.shape[0]):
             if repair.cumple(matrixBin[solucion]) == 0:
                 matrixBin[solucion] = repair.repara_one(matrixBin[solucion],repairType,problemaGPU,pondRestricciones)[0]

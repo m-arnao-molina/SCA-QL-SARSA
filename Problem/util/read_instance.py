@@ -3,7 +3,6 @@ import numpy as np
 
 class Read:
     def __init__(self, filePath):
-        print('hola')
         self.__c = []
         self.__r = []
         self.rows = 0

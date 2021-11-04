@@ -50,13 +50,15 @@ class DiscretizationScheme:
 
     def T_V1(self):
         # revisado ok
+        print('T_V1')
         self.matrixProbT = np.abs(scyesp.erf(np.divide(np.sqrt(np.pi),2)*self.matrixCont))
 
     def T_V2(self):
+        print('T_V2')
         self.matrixProbT = np.abs(np.tanh(self.matrixCont))
 
     def T_V3(self):
-
+        print('T_V3')
         # for i in range(len(self.matrixCont)):
         #     for d in range(len(self.matrixCont[i])):
         #         self.matrixProbT[i][d] = math.fabs(self.matrixCont[i][d]/math.sqrt(1+(self.matrixCont[i][d]**2)))
@@ -66,7 +68,7 @@ class DiscretizationScheme:
         self.matrixProbT = np.abs(np.divide(self.matrixCont, np.sqrt(1+np.power(self.matrixCont,2))))
 
     def T_V4(self):
-
+        print('T_V4')
         # for i in range(len(self.matrixCont)):
         #     for d in range(len(self.matrixCont[i])):
         #         self.matrixProbTAux[i][d] = math.fabs((2/math.pi)*math.atan((math.pi/2)*self.matrixCont[i][d]))
@@ -76,7 +78,7 @@ class DiscretizationScheme:
         # return (self.matrixProbTAux-self.matrixProbT)
 
     def T_S1(self):
-
+        print('T_S1')
         # for i in range(len(self.matrixCont)):
         #     for d in range(len(self.matrixCont[i])):
         #         self.matrixProbTAux[i][d] = 1 / (1 + math.exp(-2 * self.matrixCont[i][d]))
@@ -86,7 +88,7 @@ class DiscretizationScheme:
         # return (self.matrixProbTAux-self.matrixProbT)
 
     def T_S2(self):
-
+        print('T_S2')
         # for i in range(len(self.matrixCont)):
         #     for d in range(len(self.matrixCont[i])):
         #         self.matrixProbTAux[i][d] = 1 / (1 + math.exp(-1 * self.matrixCont[i][d]))
@@ -97,7 +99,7 @@ class DiscretizationScheme:
         # return (self.matrixProbTAux-self.matrixProbT)
 
     def T_S3(self):
-
+        print('T_S3')
         # for i in range(len(self.matrixCont)):
         #     for d in range(len(self.matrixCont[i])):
         #         self.matrixProbTAux[i][d] = 1 / (1 + math.exp(np.divide(-1*self.matrixCont[i][d],2)))
@@ -107,7 +109,7 @@ class DiscretizationScheme:
         # return (self.matrixProbTAux-self.matrixProbT)
 
     def T_S4(self):
-
+        print('T_S4')
         # for i in range(len(self.matrixCont)):
         #     for d in range(len(self.matrixCont[i])):
         #         self.matrixProbTAux[i][d] = 1 / (1 + math.exp(np.divide(-1*self.matrixCont[i][d],3)))
@@ -118,7 +120,7 @@ class DiscretizationScheme:
 
     #Binarization
     def B_Standard(self):
-
+        print('B_Standard')
         # for i in range(len(self.matrixProbT)):
             
         #     for d in range(len(self.matrixProbT[i])):
@@ -133,7 +135,7 @@ class DiscretizationScheme:
         self.matrixBinOut = np.greater(self.matrixProbT,matrixRand).astype(int)
 
     def B_Complement(self):
-
+        print('B_Complement')
         matrixRand = np.random.uniform(low=0.0,high=1.0,size=self.matrixCont.shape)
         matrixComplement = np.abs(1-self.matrixBin)
         # cambie greater, por greater_equal (por ecuacion)
@@ -141,7 +143,7 @@ class DiscretizationScheme:
         return self.matrixBinOut
 
     def B_Elitist(self):
-
+        print('B_Elitist')
         # start = time.time()
 
         matrixRand = np.random.uniform(low=0.0,high=1.0,size=self.matrixCont.shape)
@@ -181,7 +183,7 @@ class DiscretizationScheme:
         # print((dif==0).all())
 
     def B_Static(self):
-        
+        print('B_Static')
         # start = time.time()
         alfa = 1/3
         # for i in range(len(self.matrixCont)):
@@ -226,7 +228,7 @@ class DiscretizationScheme:
         #     return self.solution_int
 
     def B_ElitistRoulette(self):
-        
+        print('B_ElitistRoulette')
         start = time.time()
 
         matrixRand = np.random.uniform(low=0.0,high=1.0,size=self.matrixCont.shape)
