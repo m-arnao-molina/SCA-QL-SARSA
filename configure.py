@@ -4,7 +4,7 @@ db = Database()
 
 algorithms = {
     'SCP': [
-        {'codeName': 'SCA_SCP_BCL1', 'rewardType': None},
+        # {'codeName': 'SCA_SCP_BCL1', 'rewardType': None},
         # {'codeName': 'SCA_SCP_MIR2', 'rewardType': None},
         # {'codeName': 'SCA_SCP_QL1', 'rewardType': 'withPenalty1'},
         # {'codeName': 'SCA_SCP_QL2', 'rewardType': 'withoutPenalty1'},
@@ -13,6 +13,7 @@ algorithms = {
         # {'codeName': 'SCA_SCP_QL5', 'rewardType': 'escalatingMultiplicativeAdaptation'}
     ],
     'KP': [
+        {'codeName': 'SCA_KP', 'rewardType': None},
         # {'codeName': 'SCA_KPP_QL1', 'rewardType': 'withPenalty1'},
         # {'codeName': 'SCA_KPP_QL2', 'rewardType': 'withoutPenalty1'},
         # {'codeName': 'SCA_KPP_QL3', 'rewardType': 'globalBest'},
@@ -23,6 +24,9 @@ algorithms = {
         # {'codeName': 'SCA_KPP_SA3', 'rewardType': 'globalBest'},
         # {'codeName': 'SCA_KPP_SA4', 'rewardType': 'rootAdaptation'},
         # {'codeName': 'SCA_KPP_SA5', 'rewardType': 'escalatingMultiplicativeAdaptation'},
+    ],
+    'FLP': [
+        # {'codeName': 'SCA_FLP', 'rewardType': None},
     ]
 }
 
@@ -36,9 +40,18 @@ instances = {
     'KP': {
         'directory': 'KP/',
         'names': [
-            'f1_l-d_kp_10_269', 'f2_l-d_kp_20_878', 'f3_l-d_kp_4_20', 'f4_l-d_kp_4_11', 'f5_l-d_kp_15_375',
-            'f6_l-d_kp_10_60', 'knapPI_1_100_1000_1', 'knapPI_2_100_1000_1', 'knapPI_3_100_1000_1',
-            'knapPI_1_200_1000_1'
+            'f1_l-d_kp_10_269', # 'f2_l-d_kp_20_878', 'f3_l-d_kp_4_20', 'f4_l-d_kp_4_11', 'f5_l-d_kp_15_375',
+            # 'f6_l-d_kp_10_60', 'knapPI_1_100_1000_1', 'knapPI_2_100_1000_1', 'knapPI_3_100_1000_1',
+            # 'knapPI_1_200_1000_1'
+        ]
+    },
+    'FLP': {
+        'directory': 'FLP/',
+        'names': [
+            'FLPr_100_40_01', # 'FLPr_100_40_02', 'FLPr_100_40_03', 'FLPr_100_40_04', 'FLPr_100_40_05', 'FLPr_100_40_06',
+            # 'FLPr_100_40_07', 'FLPr_100_40_08', 'FLPr_100_40_09', 'FLPr_100_40_10', 'FLPr_100_100_01',
+            # 'FLPr_100_100_02', 'FLPr_100_100_03', 'FLPr_100_100_04', 'FLPr_100_100_05', 'FLPr_100_100_06',
+            # 'FLPr_100_100_07', 'FLPr_100_100_08', 'FLPr_100_100_09', 'FLPr_100_100_10'
         ]
     }
 }
@@ -71,7 +84,7 @@ for run in range(runs):
                         },
                         'repairType': repairType,
                         'policy': policy,
-                        'rewardType': problemAlgorithm['rewardType'],
+                        'rewardType': problemAlgorithm.get('rewardType'),
                         'qlAlpha': qlAlpha,
                         'qlGamma': qlGamma,
                         'qlAlphaType': qlAlphaType

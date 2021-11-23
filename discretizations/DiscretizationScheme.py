@@ -38,69 +38,77 @@ class DiscretizationScheme:
 
     # Transfer functions
     def tV1(self):
-        print('tV1')
+        # print('tV1')
         self.probMatrix = np.abs(scyesp.erf(np.divide(np.sqrt(np.pi), 2) * self.continuousMatrix))
 
     def tV2(self):
-        print('tV2')
+        # print('tV2')
         self.probMatrix = np.abs(np.tanh(self.continuousMatrix))
 
     def tV3(self):
-        print('tV3')
+        # print('tV3')
         self.probMatrix = np.abs(np.divide(self.continuousMatrix, np.sqrt(1 + np.power(self.continuousMatrix, 2))))
 
     def tV4(self):
-        print('tV4')
+        # print('tV4')
         self.probMatrix = np.abs(np.divide(2, np.pi) * np.arctan(np.divide(np.pi, 2) * self.continuousMatrix))
 
     def tS1(self):
-        print('tS1')
+        # print('tS1')
         self.probMatrix = np.divide(1, (1 + np.exp(-2 * self.continuousMatrix)))
 
     def tS2(self):
-        print('tS2')
+        # print('tS2')
         self.probMatrix = np.divide(1, (1 + np.exp(-1 * self.continuousMatrix)))
 
     def tS3(self):
-        print('tS3')
+        # print('tS3')
         self.probMatrix = np.divide(1, (1 + np.exp(np.divide(-1 * self.continuousMatrix, 2))))
 
     def tS4(self):
-        print('tS4')
+        # print('tS4')
         self.probMatrix = np.divide(1, (1 + np.exp(np.divide(-1 * self.continuousMatrix, 3))))
 
     def tZ1(self):
-        print('tZ1')
+        # print('tZ1')
         self.probMatrix = np.sqrt(1 - 2 * self.continuousMatrix)
 
     def tZ2(self):
-        print('tZ2')
+        # print('tZ2')
         self.probMatrix = np.sqrt(1 - 5 * self.continuousMatrix)
 
     def tZ3(self):
-        print('tZ3')
+        # print('tZ3')
         self.probMatrix = np.sqrt(1 - 8 * self.continuousMatrix)
 
     def tZ4(self):
-        print('tZ4')
+        # print('tZ4')
         self.probMatrix = np.sqrt(1 - 20 * self.continuousMatrix)
 
     # Binarization methods
     def bStandard(self):
-        print('bStandard')
+        # print('bStandard')
         randMatrix = np.random.uniform(low=0.0, high=1.0, size=self.continuousMatrix.shape)
         # cambio de greater a greater_equal respetando la ecuación
         self.binMatrixOut = np.greater_equal(self.probMatrix, randMatrix).astype(int)
 
     def bComplement(self):
-        print('bComplement')
+        # print('bComplement')
         randMatrix = np.random.uniform(low=0.0, high=1.0, size=self.continuousMatrix.shape)
         complementMatrix = np.abs(1 - self.binMatrix)
         self.binMatrixOut = np.multiply(np.greater_equal(self.probMatrix, randMatrix).astype(int), complementMatrix)
         return self.binMatrixOut
 
+    def bStatic(self):
+        # print('bStatic')
+        alfa = 1 / 3
+        self.binMatrixOut[self.probMatrix <= alfa] = 0
+        self.binMatrixOut[(self.probMatrix > alfa) & (self.probMatrix <= 0.5 * (1 + alfa))] = \
+            self.binMatrix[(self.probMatrix > alfa) & (self.probMatrix <= 0.5 * (1 + alfa))]
+        self.binMatrixOut[self.probMatrix >= 0.5 * (1 + alfa)] = 1
+
     def bElitist(self):
-        print('bElitist')
+        # print('bElitist')
         randMatrix = np.random.uniform(low=0.0, high=1.0, size=self.continuousMatrix.shape)
         conditionMatrix = np.greater(self.probMatrix, randMatrix)
         # todo: validar que el index exista
@@ -108,16 +116,8 @@ class DiscretizationScheme:
         # if ProbT > Rand(), then bestIndividual, else 0
         self.binMatrixOut = np.where(conditionMatrix == True, bestIndividual, 0)
 
-    def bStatic(self):
-        print('bStatic')
-        alfa = 1 / 3
-        self.binMatrixOut[self.probMatrix <= alfa] = 0
-        self.binMatrixOut[(self.probMatrix > alfa) & (self.probMatrix <= 0.5 * (1 + alfa))] = \
-            self.binMatrix[(self.probMatrix > alfa) & (self.probMatrix <= 0.5 * (1 + alfa))]
-        self.binMatrixOut[self.probMatrix >= 0.5 * (1 + alfa)] = 1
-
     def bElitistRoulette(self):
-        print('bElitistRoulette')
+        # print('bElitistRoulette')
         randMatrix = np.random.uniform(low=0.0, high=1.0, size=self.continuousMatrix.shape)
 
         conditionMatrix = np.greater(self.probMatrix, randMatrix)
@@ -156,8 +156,8 @@ class DiscretizationScheme:
         binarizationMethodsSwitcher = {
             'STANDARD': self.bStandard,
             'COMPLEMENT': self.bComplement,
-            'ELITIST': self.bElitist,
             'STATIC': self.bStatic,
+            'ELITIST': self.bElitist,
             'ELITIST_ROULETTE': self.bElitistRoulette
         }
         binarizationMethodsSwitcher.get(self.binarizationOperator.upper(), self.bStandard)()

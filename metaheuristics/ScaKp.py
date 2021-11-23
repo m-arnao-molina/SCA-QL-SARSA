@@ -5,25 +5,25 @@ from database.DatabaseORM import Database
 from Metrics import Diversidad as dv
 
 from metaheuristics.Metaheuristic import Metaheuristic
-from problems.Scp import Scp
+from problems.Kp import Kp
 
 db = Database()
 
 
-class ScaScp(Metaheuristic):
+class ScaKp(Metaheuristic):
     def process(self, *args, **kwargs):
         db.startExecution(self.executionId, datetime.now())
 
         if not self.validateInstance():
             return False
 
-        scp = Scp(self.instanceName, self.instancePath, self.populationSize, self.discretizationScheme, self.repairType)
-        scp.readInstance()
-        scp.process()
+        kp = Kp(self.instanceName, self.instancePath, self.populationSize, self.discretizationScheme)
+        kp.readInstance()
+        kp.process()
 
         maxDiversities = np.zeros(7)  # es tamaño 7 porque calculamos 7 diversidades
         diversities, maxDiversities, explorationPercentage, exploitationPercentage, state = dv.ObtenerDiversidadYEstado(
-            scp.binMatrix, maxDiversities
+            kp.binMatrix, maxDiversities
         )
 
         a = 2
@@ -42,44 +42,48 @@ class ScaScp(Metaheuristic):
 
             # SCA
             r1 = a - iterationNumber * (a / self.maxIterations)
-            r4 = np.random.uniform(low=0.0, high=1.0, size=scp.population.shape[0])
-            r2 = (2 * np.pi) * np.random.uniform(low=0.0, high=1.0, size=scp.population.shape)
-            r3 = np.random.uniform(low=0.0, high=2.0, size=scp.population.shape)
-            bestSolutionIndex = scp.solutionsRanking[0]
-            bestSolutionOldBin = scp.binMatrix[bestSolutionIndex]
-            bestSolution = scp.population[bestSolutionIndex]
-            bestFitness = np.min(scp.fitness)
-            avgFitness = np.average(scp.fitness)
+            r4 = np.random.uniform(low=0.0, high=1.0, size=kp.population.shape[0])
+            r2 = (2 * np.pi) * np.random.uniform(low=0.0, high=1.0, size=kp.population.shape)
+            r3 = np.random.uniform(low=0.0, high=2.0, size=kp.population.shape)
+
+            bestSolutionIndex = kp.solutionsRanking[0]
+            bestSolutionOldFitness = kp.fitness[bestSolutionIndex]
+            bestSolutionOldBin = kp.binMatrix[bestSolutionIndex]
+            bestSolution = kp.population[bestSolutionIndex]
+            bestFitness = np.max(kp.fitness)
+            avgFitness = np.average(kp.fitness)
 
             # print(f'---{iterationNumber}---')
-            # print('scp.fitness:', scp.fitness)
-            # #print('bestSolutionOldFitness:', bestSolutionOldFitness)
+            # print('kp.fitness:', kp.fitness)
+            # print('bestSolutionOldFitness:', bestSolutionOldFitness)
             # print('bestSolutionOldBin:', bestSolutionOldBin)
             # print('bestSolution:', bestSolution)
-            # print('scp.solutionsRanking:', scp.solutionsRanking)
+            # print('kp.solutionsRanking:', kp.solutionsRanking)
             # print('------')
 
-            scp.population[r4 < 0.5] = scp.population[r4 < 0.5] + np.multiply(
+            kp.population[r4 < 0.5] = kp.population[r4 < 0.5] + np.multiply(
                 r1, np.multiply(np.sin(r2[r4 < 0.5]), np.abs(
-                    np.multiply(r3[r4 < 0.5], bestSolution) - scp.population[r4 < 0.5]
+                    np.multiply(r3[r4 < 0.5], bestSolution) - kp.population[r4 < 0.5]
                 ))
             )
-            scp.population[r4 >= 0.5] = scp.population[r4 >= 0.5] + np.multiply(
+            kp.population[r4 >= 0.5] = kp.population[r4 >= 0.5] + np.multiply(
                 r1, np.multiply(np.cos(r2[r4 >= 0.5]), np.abs(
-                    np.multiply(r3[r4 >= 0.5], bestSolution) - scp.population[r4 >= 0.5]
+                    np.multiply(r3[r4 >= 0.5], bestSolution) - kp.population[r4 >= 0.5]
                 ))
             )
 
             # Se binariza y evalua el fitness de todas las soluciones de la iteración t
-            scp.process()
+            kp.process()
 
-            # Conservo el Best
-            if scp.fitness[bestSolutionIndex] > bestFitness:
-                scp.fitness[bestSolutionIndex] = bestFitness
-                scp.binMatrix[bestSolutionIndex] = bestSolutionOldBin
+            # Se convierte el Best pisándolo
+            if np.max(kp.fitness) <= bestSolutionOldFitness:
+                kp.fitness[bestSolutionIndex] = bestSolutionOldFitness
+                kp.binMatrix[bestSolutionIndex] = bestSolutionOldBin
+            else:
+                print(f'fitness[solutionsRank[0]]***: {kp.fitness[bestSolutionIndex]}')
 
             diversities, maxDiversities, explorationPercentage, exploitationPercentage, state = dv.ObtenerDiversidadYEstado(
-                scp.binMatrix, maxDiversities
+                kp.binMatrix, maxDiversities
             )
 
             iterationTimeEnd = np.round(time.time() - iterationTimeStart, 6)
@@ -89,10 +93,10 @@ class ScaScp(Metaheuristic):
                 'avgFitness': float(avgFitness),
                 'fitnessBestIteration': 0,
                 'parameters': {
-                    'fitness': int(np.min(scp.fitness)),
+                    'fitness': int(np.max(kp.fitness)),
                     'iterationTime': iterationTimeEnd,
                     'processTime': processTimeEnd,
-                    'repairsQuantity': int(scp.repairsQuantity),
+                    'repairsQuantity': int(kp.repairsQuantity),
                     'diversities': diversities.tolist(),
                     'explorationPercentage': explorationPercentage.tolist(),
                     'exploitationPercentage': exploitationPercentage.tolist(),

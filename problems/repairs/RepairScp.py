@@ -47,6 +47,6 @@ class RepairScp:
             lSolution, self.constraints, self.costs, self.rHeuristic, self.dictcHeuristics, self.dict, self.cHeuristic,
             self.dictCol
         )
-        sol = np.zeros(self.constraints.shape[1], dtype=np.float)
+        sol = np.zeros(self.constraints.shape[1], dtype=np.float64)
         sol[lSolution] = 1
         return sol.tolist(), repairsQuantity

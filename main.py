@@ -1,7 +1,8 @@
 import json
 from database.DatabaseORM import Database
-
+from metaheuristics.ScaFlp import ScaFlp
 from metaheuristics.ScaScp import ScaScp
+from metaheuristics.ScaKp import ScaKp
 
 # Algorithms
 from metaheuristics.SCA_SCP import SCA_SCP
@@ -50,6 +51,34 @@ while True:
         if scaScp.process():
             print(f'Execution ID: {lastPendingExecution.id} completed')
     # """
+
+    if lastPendingExecution.algorithmCodeName in ['SCA_FLP']:
+        scaFlp = ScaFlp(
+            executionId=lastPendingExecution.id,
+            instanceName=lastPendingExecution.parameters['instanceName'],
+            instanceFile=lastPendingExecution.parameters['instanceFile'],
+            instanceDirectory=lastPendingExecution.parameters['instanceDirectory'],
+            populationSize=lastPendingExecution.parameters['populationSize'],
+            maxIterations=lastPendingExecution.parameters['maxIterations'],
+            discretizationScheme=lastPendingExecution.parameters['discretizationScheme'],
+            repairType=lastPendingExecution.parameters['repairType']
+        )
+        if scaFlp.process():
+            print(f'Execution ID: {lastPendingExecution.id} completed')
+
+    if lastPendingExecution.algorithmCodeName in ['SCA_KP']:
+        scaKp = ScaKp(
+            executionId=lastPendingExecution.id,
+            instanceName=lastPendingExecution.parameters['instanceName'],
+            instanceFile=lastPendingExecution.parameters['instanceFile'],
+            instanceDirectory=lastPendingExecution.parameters['instanceDirectory'],
+            populationSize=lastPendingExecution.parameters['populationSize'],
+            maxIterations=lastPendingExecution.parameters['maxIterations'],
+            discretizationScheme=lastPendingExecution.parameters['discretizationScheme'],
+            repairType=lastPendingExecution.parameters['repairType']
+        )
+        if scaKp.process():
+            print(f'Execution ID: {lastPendingExecution.id} completed')
     exit(0)
 
     if lastPendingExecution.algorithmCodeName in ['SCA_SCP_QL1', 'SCA_SCP_QL2', 'SCA_SCP_QL3', 'SCA_SCP_QL4',

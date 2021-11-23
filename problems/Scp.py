@@ -19,7 +19,7 @@ class Scp(Problem):
         self.binMatrix = np.random.randint(low=0, high=2, size=(self.populationSize, self.costs.shape[0]))
         self.fitness = np.zeros(self.populationSize)
         self.solutionsRanking = np.zeros(self.populationSize)
-        self.weightConstraints = np.array([], dtype=np.float)
+        self.weightConstraints = np.array([], dtype=np.float64)
 
     def getGlobalOptimum(self):
         instances = {
@@ -161,7 +161,7 @@ class Scp(Problem):
                     self.binMatrix[solution] = repairScp.repair(self.binMatrix[solution])[0]
             self.repairsQuantity = np.sum(self.binMatrix - unrepairedBinMatrix)
 
-        # Calculamos Fitness
+        # Calculamos fitness
         self.fitness = np.sum(np.multiply(self.binMatrix, self.costs), axis=1)
         self.solutionsRanking = np.argsort(self.fitness)  # rankings de los mejores fitness
 

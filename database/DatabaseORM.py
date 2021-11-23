@@ -50,7 +50,7 @@ class Database(metaclass=DatabaseMeta):
     def getLastPendingExecution(self):
         try:
             try:
-                return self.session.execute(select(Execution).filter_by(status='PENDING')).scalar_one()
+                return self.session.execute(select(Execution).filter_by(status='PENDING').limit(1)).scalar_one()
             except NoResultFound:
                 return None
         except SQLAlchemyError as error:
@@ -196,7 +196,7 @@ class ExecutionResult(Database().Base):
 
     id = Column(Integer, primary_key=True)
     fitness = Column(Float)
-    bestSolution = Column(String(255))
+    bestSolution = Column(JSON)
     startDatetime = Column(DateTime)
     endDatetime = Column(DateTime)
 
