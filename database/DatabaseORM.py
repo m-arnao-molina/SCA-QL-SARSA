@@ -1,6 +1,7 @@
 from datetime import datetime
 from dotenv import dotenv_values
-from sqlalchemy import Column, create_engine, DateTime, Float, ForeignKey, Integer, JSON, LargeBinary, select, String
+from sqlalchemy import Column, create_engine, DateTime, Float, ForeignKey, Integer, LargeBinary, select, String
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -142,7 +143,7 @@ class Execution(Database().Base):
     startDatetime = Column(DateTime)
     endDatetime = Column(DateTime)
 
-    iterations = relationship('Iteration', back_populates='execution')
+    iterations = relationship('Iteration', back_populates='execution', order_by='Iteration.iterationNumber.asc()')
     executionResults = relationship('ExecutionResult', back_populates='execution')
 
     def __init__(self, algorithmCodeName, parameters, status, startDatetime=None, endDatetime=None):
