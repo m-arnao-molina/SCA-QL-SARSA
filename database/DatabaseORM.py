@@ -38,6 +38,9 @@ class Database(metaclass=DatabaseMeta):
         self.Base = declarative_base()
         self.Base.metadata.create_all(self.engine)
 
+    def sync(self):
+        self.Base.metadata.create_all(self.engine)
+
     def insertExecution(self, algorithmCodeName, parameters, status, startDatetime=None, endDatetime=None):
         try:
             execution = Execution(algorithmCodeName, parameters, status, startDatetime, endDatetime)

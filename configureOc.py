@@ -1,6 +1,7 @@
 from database.DatabaseORM import Database
 
 db = Database()
+db.sync()
 
 problems = ['SCP', 'KP']
 transferFunctions = ['S1', 'S2', 'S3', 'S4', 'V1', 'V2', 'V3', 'V4', 'Z1', 'Z2', 'Z3', 'Z4']
@@ -20,17 +21,6 @@ for problem in problems:
                     'binarizationOperator': binarizationOperator
                 }
             })
-
-"""
-algorithms = {
-    'SCP': [
-        # {'codeName': 'SCA_SCP_V4_ELT', 'discretizationScheme': {'transferFunction': 'V4', 'binarizationOperator': 'ELITIST'}},
-    ],
-    'KP': [
-        {'codeName': 'SCA_KP_V4_ELT', 'discretizationScheme': {'transferFunction': 'V4', 'binarizationOperator': 'ELITIST'}},
-    ]
-}
-"""
 
 instances = {
     'SCP': {
@@ -53,7 +43,7 @@ runs = 10  # 31
 populationSize = 40
 maxIterations = 500
 repairType = 2  # 1: Simple; 2: Compleja; 3: RepairGPU
-# """
+
 for run in range(runs):
     for problem, problemAlgorithms in algorithms.items():
         for problemAlgorithm in problemAlgorithms:
@@ -73,24 +63,4 @@ for run in range(runs):
                 )
                 print(f'Execution ID: {execution.id}')
 
-"""
-for run in range(runs):
-    for problem, problemAlgorithms in algorithms.items():
-        for problemAlgorithm in problemAlgorithms:
-            for instanceName in instances[problem]['names']:
-                execution = db.insertExecution(
-                    algorithmCodeName=problemAlgorithm['codeName'],
-                    parameters={
-                        'instanceName': instanceName,
-                        'instanceFile': instanceName + '.txt',
-                        'instanceDirectory': instances[problem]['directory'],
-                        'populationSize': populationSize,
-                        'maxIterations': maxIterations,
-                        'discretizationScheme': 'V4,Elitist',
-                        'repairType': repairType
-                    },
-                    status='PENDING'
-                )
-                print(f'Execution ID: {execution.id}')
-"""
 print('Executions created successfully')
