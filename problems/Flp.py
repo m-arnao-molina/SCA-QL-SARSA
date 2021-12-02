@@ -2,9 +2,7 @@ import random
 import numpy as np
 from discretizations.DiscretizationScheme import DiscretizationScheme
 from problems.Problem import Problem
-from problems.repairs.RepairScp import RepairScp
-from Problem.repair import cumpleRestricciones as cumpleGPU
-from Problem.repair.ReparaStrategy import ReparaStrategy
+
 
 class Flp(Problem):
     def __init__(self, instanceName, instancePath, populationSize, discretizationScheme, repairType):
@@ -94,16 +92,17 @@ class Flp(Problem):
         self.weightConstraints = 1 / np.sum(self.customerBudgets)  # <<<
 
     def process(self, *args, **kwargs):
+        # print('----------START process----------')
         # Binarización de 2 pasos
         self.binMatrix = DiscretizationScheme(
             self.population, self.binMatrix, self.solutionsRanking, self.discretizationScheme['transferFunction'],
             self.discretizationScheme['binarizationOperator']
         ).binarize()
-        print('----------START process----------')
+        print('self.binMatrix:', self.binMatrix)
         for solution in range(self.binMatrix.shape[0]):
             openFacilities = np.sum(self.binMatrix[solution])
-            print(f'[antes] solution: {solution} - open facilities: {openFacilities}')
-            print('[antes] self.binMatrix[solution]:', self.binMatrix[solution])
+            # print(f'[antes] solution: {solution} - open facilities: {openFacilities}')
+            # print('[antes] self.binMatrix[solution]:', self.binMatrix[solution])
 
             if openFacilities > self.openFacilities:  # si hay mas de p tiendas abiertas
                 potentialCloseFacilities = np.where(self.binMatrix[solution] == 1)[0]
@@ -114,9 +113,9 @@ class Flp(Problem):
                 randIndexes = random.sample(set(potentialOpenNewFacilities), k=(self.openFacilities - openFacilities))
                 self.binMatrix[solution][randIndexes] = 1
 
-            openFacilities = np.sum(self.binMatrix[solution])
-            print(f'[despues] solution: {solution} - open facilities: {openFacilities}')
-            print('[despues] self.binMatrix[solution]:', self.binMatrix[solution])
+            # openFacilities = np.sum(self.binMatrix[solution])
+            # print(f'[despues] solution: {solution} - open facilities: {openFacilities}')
+            # print('[despues] self.binMatrix[solution]:', self.binMatrix[solution])
 
             facilitiesSelectedCosts = np.zeros((self.openFacilities, self.customers), dtype=np.int32)
             i = 0
@@ -124,36 +123,35 @@ class Flp(Problem):
                 if self.binMatrix[solution][facilityOpen] == 1:
                     facilitiesSelectedCosts[i] = self.costs[facilityOpen]
                     i += 1
-            print('facilitiesSelectedCosts:', facilitiesSelectedCosts)
+            # print('facilitiesSelectedCosts:', facilitiesSelectedCosts)
 
             self.fitness[solution] = 0
             for customer in range(self.customerBudgets.shape[0]):
                 facilitiesCosts = np.sort(facilitiesSelectedCosts[:, customer])
                 if facilitiesCosts[0] <= self.customerBudgets[customer]:
                     self.fitness[solution] += facilitiesCosts[0]
-
-            print('self.fitness[solution]:', self.fitness[solution])
+            # print('self.fitness[solution]:', self.fitness[solution])
 
         self.solutionsRanking = (-self.fitness).argsort()
 
-        print('self.fitness:', self.fitness)
-        print('self.solutionsRanking:', self.solutionsRanking)
+        # print('self.fitness:', self.fitness)
+        # print('self.solutionsRanking:', self.solutionsRanking)
 
-        bestSolutionIdx = self.solutionsRanking[0]
-        bestSolution = self.binMatrix[bestSolutionIdx]
-        facilitiesSelectedCosts = np.zeros((self.openFacilities, self.customers), dtype=np.int32)
-        i = 0
-        for facilityOpen in range(self.binMatrix[bestSolutionIdx].shape[0]):
-            if self.binMatrix[bestSolutionIdx][facilityOpen] == 1:
-                print('self.costs[facilityOpen]:', self.costs[facilityOpen])
-                facilitiesSelectedCosts[i] = self.costs[facilityOpen]
-                i += 1
+        # bestSolutionIdx = self.solutionsRanking[0]
+        # bestSolution = self.binMatrix[bestSolutionIdx]
+        # facilitiesSelectedCosts = np.zeros((self.openFacilities, self.customers), dtype=np.int32)
+        # i = 0
+        # for facilityOpen in range(self.binMatrix[bestSolutionIdx].shape[0]):
+        #    if self.binMatrix[bestSolutionIdx][facilityOpen] == 1:
+        #        print('self.costs[facilityOpen]:', self.costs[facilityOpen])
+        #        facilitiesSelectedCosts[i] = self.costs[facilityOpen]
+        #        i += 1
 
-        print('bestSolutionFitness:', self.fitness[bestSolutionIdx])
-        print('bestSolutionIdx:', bestSolutionIdx)
-        print('bestSolution:', bestSolution)
-        print('facilitiesSelectedCosts:', facilitiesSelectedCosts)
-        print('self.customerBudgets:', self.customerBudgets)
+        # print('bestSolutionFitness:', self.fitness[bestSolutionIdx])
+        # print('bestSolutionIdx:', bestSolutionIdx)
+        # print('bestSolution:', bestSolution)
+        # print('facilitiesSelectedCosts:', facilitiesSelectedCosts)
+        # print('self.customerBudgets:', self.customerBudgets)
 
 
     def process2(self, *args, **kwargs):

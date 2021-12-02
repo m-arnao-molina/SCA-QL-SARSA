@@ -23,7 +23,7 @@ instances = {
         ('FLPr_100_100_09', 'FLP19'), ('FLPr_100_100_10', 'FLP20')
     ],
 }
-
+"""
 for problem in problems:
     for transferFunction in transferFunctions:
         for binarizationOperator, binarizationOperatorAlias in binarizationOperators:
@@ -34,14 +34,11 @@ for problem in problems:
                     filter(Execution.id >= 10). \
                     filter(Execution.parameters['instanceName'].astext == instance). \
                     filter(Execution.parameters['discretizationScheme']['transferFunction'].astext == transferFunction). \
-                    filter(Execution.parameters['discretizationScheme']['binarizationOperator'].astext == binarizationOperator)
+                    filter(Execution.parameters['discretizationScheme']['binarizationOperator'].astext == binarizationOperator). \
+                    order_by(desc(ExecutionResult.fitness)). \
+                    limit(1). \
+                    one()
 
-                if problem == 'SCP':
-                    executionResult = executionResult.order_by(asc(ExecutionResult.fitness))
-                elif problem == 'KP':
-                    executionResult = executionResult.order_by(desc(ExecutionResult.fitness))
-
-                executionResult = executionResult.limit(1).one()
                 iterations = executionResult.execution.iterations
                 explorations = np.array([])
                 exploitations = np.array([])
@@ -65,3 +62,37 @@ for problem in problems:
                 plt.close(figure)
                 plt.close('all')
                 # plt.show()
+
+
+exit(0)
+"""
+
+executionResult = db.session.query(ExecutionResult). \
+    join(ExecutionResult.execution). \
+    filter(Execution.id == 55). \
+    limit(1). \
+    one()
+
+iterations = executionResult.execution.iterations
+explorations = np.array([])
+exploitations = np.array([])
+for iteration in iterations:
+    explorations = np.append(explorations, iteration.parameters['explorationPercentage'][0])
+    exploitations = np.append(exploitations, iteration.parameters['exploitationPercentage'][0])
+
+# print(explorations)
+# print(exploitations)
+
+figure = plt.figure()
+ax = figure.add_subplot()
+ax.plot(explorations)
+ax.plot(exploitations)
+ax.legend([
+    f'Exploración {round(np.average(explorations), 2)} %',
+    f'Explotación {round(np.average(exploitations), 2)} %'
+])
+plt.title('Dimensional Hussain', figure=figure)
+figure.savefig(f'outputFiles/{executionResult.execution.algorithmCodeName}_{int(executionResult.fitness)}_{executionResult.executionId}.png')
+plt.close(figure)
+plt.close('all')
+# plt.show()

@@ -162,4 +162,4 @@ class DiscretizationScheme:
         }
         binarizationMethodsSwitcher.get(self.binarizationOperator.upper(), self.bStandard)()
 
-        return self.binMatrixOut
+        return self.binMatrixOut.astype(int)

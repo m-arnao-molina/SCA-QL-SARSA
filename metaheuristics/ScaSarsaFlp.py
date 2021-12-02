@@ -5,17 +5,51 @@ from database.DatabaseORM import Database
 from Metrics import Diversidad as dv
 
 from metaheuristics.Metaheuristic import Metaheuristic
+from machineLearnings.Sarsa import Sarsa
 from problems.Flp import Flp
 
 db = Database()
 
+transferFunctions = ['S1', 'S2', 'S3', 'S4', 'V1', 'V2', 'V3', 'V4']
+binarizationOperators = ['STANDARD', 'COMPLEMENT', 'STATIC', 'ELITIST', 'ELITIST_ROULETTE']
+dsActions = [(tf, ob) for tf in transferFunctions for ob in binarizationOperators]
 
-class ScaFlp(Metaheuristic):
+
+class ScaSarsaFlp(Metaheuristic):
+    def __init__(
+            self, executionId, instanceName, instanceFile, instanceDirectory, populationSize, maxIterations,
+            discretizationScheme, repairType, policy, rewardType, qlAlpha, qlGamma, qlAlphaType
+    ):
+        super().__init__(
+            executionId, instanceName, instanceFile, instanceDirectory, populationSize, maxIterations,
+            discretizationScheme, repairType
+        )
+        self.policy = policy
+        self.rewardType = rewardType
+        self.qlAlpha = qlAlpha
+        self.qlGamma = qlGamma
+        self.qlAlphaType = qlAlphaType
+
     def process(self, *args, **kwargs):
         db.startExecution(self.executionId, datetime.now())
 
         if not self.validateInstance():
             return False
+
+        # QLEARNING
+        agent = Sarsa(
+            self.qlGamma, dsActions, 2, self.qlAlphaType, self.rewardType, self.maxIterations, qlAlpha=self.qlAlpha
+        )
+        dsIndex = agent.getAction(0, self.policy)
+        self.discretizationScheme = {
+            'transferFunction': dsActions[dsIndex][0],
+            'binarizationOperator': dsActions[dsIndex][1]
+        }
+
+        #print('agente:', agent)
+        #print('dsIndex:', dsIndex)
+        #print('dsActions:', dsActions)
+        #print('dsActions[dsIndex]:', dsActions[dsIndex])
 
         flp = Flp(self.instanceName, self.instancePath, self.populationSize, self.discretizationScheme, self.repairType)
         flp.readInstance()
@@ -25,6 +59,9 @@ class ScaFlp(Metaheuristic):
         diversities, maxDiversities, explorationPercentage, exploitationPercentage, state = dv.ObtenerDiversidadYEstado(
             flp.binMatrix, maxDiversities
         )
+
+        # SARSA
+        currentState = state[0]  # Estamos midiendo según Diversidad "DimensionalHussain"
 
         a = 2
         globalBestFitness = 0
@@ -66,6 +103,16 @@ class ScaFlp(Metaheuristic):
                 ))
             )
 
+            # Escogemos esquema desde SARSA
+            dsIndex = agent.getAction(currentState, self.policy)
+            oldState = currentState  # Rescatamos estado actual
+            self.discretizationScheme = {
+                'transferFunction': dsActions[dsIndex][0],
+                'binarizationOperator': dsActions[dsIndex][1]
+            }
+            flp.discretizationScheme = self.discretizationScheme
+            print('dsActions[dsIndex]:', dsActions[dsIndex])
+
             # Se binariza y evalua el fitness de todas las soluciones de la iteración t
             flp.process()
 
@@ -84,6 +131,10 @@ class ScaFlp(Metaheuristic):
                 flp.binMatrix, maxDiversities
             )
 
+            currentState = state[0]
+            # Observamos, y recompensa/castigo.  Actualizamos Tabla Q
+            agent.updateQtable(np.max(flp.fitness), dsIndex, currentState, oldState, iterationNumber)
+
             iterationTimeEnd = np.round(time.time() - iterationTimeStart, 6)
             processTimeEnd = np.round(time.process_time() - processTimeStart, 6)
             iterationData.update({
@@ -95,6 +146,7 @@ class ScaFlp(Metaheuristic):
                     'iterationTime': iterationTimeEnd,
                     'processTime': processTimeEnd,
                     'repairsQuantity': int(flp.repairsQuantity),
+                    'discretizationScheme': self.discretizationScheme,
                     'diversities': diversities.tolist(),
                     'explorationPercentage': explorationPercentage.tolist(),
                     'exploitationPercentage': exploitationPercentage.tolist(),

@@ -22,17 +22,25 @@ for transferFunction in transferFunctions:
             }
         })
 
+algorithms['FLP'] = list()
+#algorithms['FLP'].append({
+#    'codeName': 'SCA_QL_FLP'
+#})
+algorithms['FLP'].append({
+    'codeName': 'SCA_SARSA_FLP'
+})
+
 instances = {
     'FLP': {
         'directory': 'FLP/',
         'names': [
-            ('FLPr_100_40_01', 'FLP1'), ('FLPr_100_40_02', 'FLP2'), ('FLPr_100_40_03', 'FLP3'),
-            ('FLPr_100_40_04', 'FLP4'), ('FLPr_100_40_05', 'FLP5'), ('FLPr_100_40_06', 'FLP6'),
-            ('FLPr_100_40_07', 'FLP7'), ('FLPr_100_40_08', 'FLP8'), ('FLPr_100_40_09', 'FLP9'),
-            ('FLPr_100_40_10', 'FLP10'), ('FLPr_100_100_01', 'FLP11'), ('FLPr_100_100_02', 'FLP12'),
-            ('FLPr_100_100_03', 'FLP13'), ('FLPr_100_100_04', 'FLP14'), ('FLPr_100_100_05', 'FLP15'),
-            ('FLPr_100_100_06', 'FLP16'), ('FLPr_100_100_07', 'FLP17'), ('FLPr_100_100_08', 'FLP18'),
-            ('FLPr_100_100_09', 'FLP19'), ('FLPr_100_100_10', 'FLP20')
+            ('FLPr_100_40_01', 'FLP1'),# ('FLPr_100_40_02', 'FLP2'), ('FLPr_100_40_03', 'FLP3'),
+            #('FLPr_100_40_04', 'FLP4'), ('FLPr_100_40_05', 'FLP5'), ('FLPr_100_40_06', 'FLP6'),
+            #('FLPr_100_40_07', 'FLP7'), ('FLPr_100_40_08', 'FLP8'), ('FLPr_100_40_09', 'FLP9'),
+            #('FLPr_100_40_10', 'FLP10'), ('FLPr_100_100_01', 'FLP11'), ('FLPr_100_100_02', 'FLP12'),
+            #('FLPr_100_100_03', 'FLP13'), ('FLPr_100_100_04', 'FLP14'), ('FLPr_100_100_05', 'FLP15'),
+            #('FLPr_100_100_06', 'FLP16'), ('FLPr_100_100_07', 'FLP17'), ('FLPr_100_100_08', 'FLP18'),
+            #('FLPr_100_100_09', 'FLP19'), ('FLPr_100_100_10', 'FLP20')
         ]
     },
     'KP': {
@@ -63,17 +71,15 @@ for run in range(runs):
                     algorithmCodeName=f'{problemAlgorithm["codeName"]}_{alias}',
                     parameters={
                         'instanceName': instanceName,
-                        'instanceFile': instanceName + '.txt',
+                        'instanceFile': f'{instanceName}.txt',
                         'instanceDirectory': instances[problem]['directory'],
                         'populationSize': populationSize,
                         'maxIterations': maxIterations,
-                        'discretizationScheme': {
-                            'transferFunction': 'V4',
-                            'binarizationOperator': 'ELITIST'
-                        },
+                        'discretizationScheme': problemAlgorithm.get('discretizationScheme'),
                         'repairType': repairType,
                         'policy': policy,
-                        'rewardType': problemAlgorithm.get('rewardType'),
+                        'rewardType': 'withPenalty1',
+                        #'rewardType': problemAlgorithm.get('rewardType'),
                         'qlAlpha': qlAlpha,
                         'qlGamma': qlGamma,
                         'qlAlphaType': qlAlphaType
