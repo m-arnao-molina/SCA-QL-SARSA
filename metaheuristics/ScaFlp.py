@@ -28,8 +28,7 @@ class ScaFlp(Metaheuristic):
 
         a = 2
         globalBestFitness = 0
-        # bestSolution = None
-        globalBestSolutionOldBin = np.array([])
+        globalBestSolutionBin = np.array([])
         startDatetime = datetime.now()
         iterationsData = []
         for iterationNumber in range(0, self.maxIterations):
@@ -48,37 +47,35 @@ class ScaFlp(Metaheuristic):
             r3 = 2 * np.random.uniform(low=0.0, high=1.0, size=flp.population.shape)
             r4 = np.random.uniform(low=0.0, high=1.0, size=flp.population.shape[0])
 
-            bestSolutionIndex = flp.solutionsRanking[0]
-            bestSolutionOldFitness = flp.fitness[bestSolutionIndex]
-            bestSolutionOldBin = flp.binMatrix[bestSolutionIndex]
-            bestSolution = flp.population[bestSolutionIndex]
-            bestFitness = np.max(flp.fitness)
-            avgFitness = np.average(flp.fitness)
+            oldBestSolutionIndex = flp.solutionsRanking[0]
+            oldBestSolutionFitness = flp.fitness[oldBestSolutionIndex]
+            oldBestSolutionBin = flp.binMatrix[oldBestSolutionIndex]
+            oldBestSolution = flp.population[oldBestSolutionIndex]
 
             flp.population[r4 < 0.5] = flp.population[r4 < 0.5] + np.multiply(
                 r1, np.multiply(np.sin(r2[r4 < 0.5]), np.abs(
-                    np.multiply(r3[r4 < 0.5], bestSolution) - flp.population[r4 < 0.5]
+                    np.multiply(r3[r4 < 0.5], oldBestSolution) - flp.population[r4 < 0.5]
                 ))
             )
             flp.population[r4 >= 0.5] = flp.population[r4 >= 0.5] + np.multiply(
                 r1, np.multiply(np.cos(r2[r4 >= 0.5]), np.abs(
-                    np.multiply(r3[r4 >= 0.5], bestSolution) - flp.population[r4 >= 0.5]
+                    np.multiply(r3[r4 >= 0.5], oldBestSolution) - flp.population[r4 >= 0.5]
                 ))
             )
 
             # Se binariza y evalua el fitness de todas las soluciones de la iteración t
             flp.process()
 
-            # Se convierte el Best pisándolo
-            if bestFitness <= bestSolutionOldFitness:
-                flp.fitness[bestSolutionIndex] = bestSolutionOldFitness
-                flp.binMatrix[bestSolutionIndex] = bestSolutionOldBin
+            # Se convierte el best pisándolo
+            if np.max(flp.fitness) <= oldBestSolutionFitness:
+                flp.fitness[oldBestSolutionIndex] = oldBestSolutionFitness
+                flp.binMatrix[oldBestSolutionIndex] = oldBestSolutionBin
             else:
-                print(f'fitness[solutionsRank[0]]***: {flp.fitness[bestSolutionIndex]}')
+                print(f'fitness[solutionsRank[0]]: {flp.fitness[flp.solutionsRanking[0]]}')
 
-            if bestFitness > globalBestFitness:
+            if np.max(flp.fitness) > globalBestFitness:
                 globalBestFitness = np.max(flp.fitness)
-                globalBestSolutionOldBin = bestSolutionOldBin
+                globalBestSolutionBin = flp.binMatrix[flp.solutionsRanking[0]]
 
             diversities, maxDiversities, explorationPercentage, exploitationPercentage, state = dv.ObtenerDiversidadYEstado(
                 flp.binMatrix, maxDiversities
@@ -87,11 +84,14 @@ class ScaFlp(Metaheuristic):
             iterationTimeEnd = np.round(time.time() - iterationTimeStart, 6)
             processTimeEnd = np.round(time.process_time() - processTimeStart, 6)
             iterationData.update({
-                'bestFitness': int(bestFitness),
-                'avgFitness': float(avgFitness),
+                'bestFitness': int(np.max(flp.fitness)),
+                'avgFitness': float(np.average(flp.fitness)),
                 'fitnessBestIteration': int(globalBestFitness),
                 'parameters': {
                     'fitness': int(np.max(flp.fitness)),
+                    'currentBestSolution': flp.binMatrix[flp.solutionsRanking[0]].tolist(),
+                    'oldBestSolutionFitness': oldBestSolutionFitness,
+                    'oldBestSolutionBin': oldBestSolutionBin.tolist(),
                     'iterationTime': iterationTimeEnd,
                     'processTime': processTimeEnd,
                     'repairsQuantity': int(flp.repairsQuantity),
@@ -111,11 +111,10 @@ class ScaFlp(Metaheuristic):
         if len(iterationsData) > 0:
             db.insertIterations(iterationsData)
 
-        # Actualiza la tabla execution_results, sin mejor_solucion
+        # Actualiza la tabla execution_results
         db.insertExecutionResult(
             fitness=int(globalBestFitness),
-            # bestSolution=bestSolution.tolist(),
-            bestSolution=globalBestSolutionOldBin.tolist(),
+            bestSolution=globalBestSolutionBin.tolist(),
             executionId=self.executionId,
             startDatetime=startDatetime,
             endDatetime=datetime.now()
