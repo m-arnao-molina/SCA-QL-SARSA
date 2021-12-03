@@ -67,32 +67,32 @@ for problem in problems:
 exit(0)
 """
 
-executionResult = db.session.query(ExecutionResult). \
+executionResults = db.session.query(ExecutionResult). \
     join(ExecutionResult.execution). \
-    filter(Execution.id == 55). \
-    limit(1). \
-    one()
+    filter(Execution.id.in_([85])). \
+    all()
 
-iterations = executionResult.execution.iterations
-explorations = np.array([])
-exploitations = np.array([])
-for iteration in iterations:
-    explorations = np.append(explorations, iteration.parameters['explorationPercentage'][0])
-    exploitations = np.append(exploitations, iteration.parameters['exploitationPercentage'][0])
+for executionResult in executionResults:
+    iterations = executionResult.execution.iterations
+    explorations = np.array([])
+    exploitations = np.array([])
+    for iteration in iterations:
+        explorations = np.append(explorations, iteration.parameters['explorationPercentage'][0])
+        exploitations = np.append(exploitations, iteration.parameters['exploitationPercentage'][0])
 
-# print(explorations)
-# print(exploitations)
+    # print(explorations)
+    # print(exploitations)
 
-figure = plt.figure()
-ax = figure.add_subplot()
-ax.plot(explorations)
-ax.plot(exploitations)
-ax.legend([
-    f'Exploración {round(np.average(explorations), 2)} %',
-    f'Explotación {round(np.average(exploitations), 2)} %'
-])
-plt.title('Dimensional Hussain', figure=figure)
-figure.savefig(f'outputFiles/{executionResult.execution.algorithmCodeName}_{int(executionResult.fitness)}_{executionResult.executionId}.png')
-plt.close(figure)
-plt.close('all')
-# plt.show()
+    figure = plt.figure()
+    ax = figure.add_subplot()
+    ax.plot(explorations)
+    ax.plot(exploitations)
+    ax.legend([
+        f'Exploración {round(np.average(explorations), 2)} %',
+        f'Explotación {round(np.average(exploitations), 2)} %'
+    ])
+    plt.title('Dimensional Hussain', figure=figure)
+    figure.savefig(f'outputFiles/{executionResult.execution.algorithmCodeName}_{int(executionResult.fitness)}_{executionResult.executionId}.png')
+    plt.close(figure)
+    plt.close('all')
+    # plt.show()

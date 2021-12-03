@@ -70,16 +70,16 @@ class Flp(Problem):
             line = file.readline().split()
             self.costs[j] = np.array(line, dtype=np.int32)
 
-        print('self.costs:', self.costs)
-        print('self.costs.shape:', self.costs.shape)
-        print('self.costs.shape[0]:', self.costs.shape[0])
+        # print('self.costs:', self.costs)
+        # print('self.costs.shape:', self.costs.shape)
+        # print('self.costs.shape[0]:', self.costs.shape[0])
 
         # Leer restricciones (?)
         line = file.readline().split()
         self.customerBudgets = np.array(line, dtype=np.int32)
 
-        print('self.customerBudgets:', self.customerBudgets)
-        print('self.customerBudgets.shape:', self.customerBudgets.shape)
+        # print('self.customerBudgets:', self.customerBudgets)
+        # print('self.customerBudgets.shape:', self.customerBudgets.shape)
 
         file.close()
         self.refreshComputedAttributes()
@@ -98,7 +98,7 @@ class Flp(Problem):
             self.population, self.binMatrix, self.solutionsRanking, self.discretizationScheme['transferFunction'],
             self.discretizationScheme['binarizationOperator']
         ).binarize()
-        print('self.binMatrix:', self.binMatrix)
+        # print('self.binMatrix:', self.binMatrix)
         for solution in range(self.binMatrix.shape[0]):
             openFacilities = np.sum(self.binMatrix[solution])
             # print(f'[antes] solution: {solution} - open facilities: {openFacilities}')

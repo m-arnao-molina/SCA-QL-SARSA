@@ -44,9 +44,9 @@ class ScaFlp(Metaheuristic):
 
             # SCA
             r1 = a - iterationNumber * (a / self.maxIterations)
-            r4 = np.random.uniform(low=0.0, high=1.0, size=flp.population.shape[0])
             r2 = (2 * np.pi) * np.random.uniform(low=0.0, high=1.0, size=flp.population.shape)
-            r3 = np.random.uniform(low=0.0, high=2.0, size=flp.population.shape)
+            r3 = 2 * np.random.uniform(low=0.0, high=1.0, size=flp.population.shape)
+            r4 = np.random.uniform(low=0.0, high=1.0, size=flp.population.shape[0])
 
             bestSolutionIndex = flp.solutionsRanking[0]
             bestSolutionOldFitness = flp.fitness[bestSolutionIndex]
@@ -70,13 +70,13 @@ class ScaFlp(Metaheuristic):
             flp.process()
 
             # Se convierte el Best pisándolo
-            if np.max(flp.fitness) <= bestSolutionOldFitness:
+            if bestFitness <= bestSolutionOldFitness:
                 flp.fitness[bestSolutionIndex] = bestSolutionOldFitness
                 flp.binMatrix[bestSolutionIndex] = bestSolutionOldBin
             else:
                 print(f'fitness[solutionsRank[0]]***: {flp.fitness[bestSolutionIndex]}')
 
-            if np.max(flp.fitness) > globalBestFitness:
+            if bestFitness > globalBestFitness:
                 globalBestFitness = np.max(flp.fitness)
                 globalBestSolutionOldBin = bestSolutionOldBin
 

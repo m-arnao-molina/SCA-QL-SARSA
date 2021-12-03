@@ -36,20 +36,15 @@ class ScaSarsaFlp(Metaheuristic):
         if not self.validateInstance():
             return False
 
-        # QLEARNING
+        # QLearning
         agent = Sarsa(
-            self.qlGamma, dsActions, 2, self.qlAlphaType, self.rewardType, self.maxIterations, qlAlpha=self.qlAlpha
+            self.qlGamma, self.qlAlphaType, self.rewardType, self.maxIterations, dsActions, 2, qlAlpha=self.qlAlpha
         )
         dsIndex = agent.getAction(0, self.policy)
         self.discretizationScheme = {
             'transferFunction': dsActions[dsIndex][0],
             'binarizationOperator': dsActions[dsIndex][1]
         }
-
-        #print('agente:', agent)
-        #print('dsIndex:', dsIndex)
-        #print('dsActions:', dsActions)
-        #print('dsActions[dsIndex]:', dsActions[dsIndex])
 
         flp = Flp(self.instanceName, self.instancePath, self.populationSize, self.discretizationScheme, self.repairType)
         flp.readInstance()
@@ -60,7 +55,7 @@ class ScaSarsaFlp(Metaheuristic):
             flp.binMatrix, maxDiversities
         )
 
-        # SARSA
+        # Sarsa
         currentState = state[0]  # Estamos midiendo según Diversidad "DimensionalHussain"
 
         a = 2
@@ -81,9 +76,9 @@ class ScaSarsaFlp(Metaheuristic):
 
             # SCA
             r1 = a - iterationNumber * (a / self.maxIterations)
-            r4 = np.random.uniform(low=0.0, high=1.0, size=flp.population.shape[0])
             r2 = (2 * np.pi) * np.random.uniform(low=0.0, high=1.0, size=flp.population.shape)
-            r3 = np.random.uniform(low=0.0, high=2.0, size=flp.population.shape)
+            r3 = 2 * np.random.uniform(low=0.0, high=1.0, size=flp.population.shape)
+            r4 = np.random.uniform(low=0.0, high=1.0, size=flp.population.shape[0])
 
             bestSolutionIndex = flp.solutionsRanking[0]
             bestSolutionOldFitness = flp.fitness[bestSolutionIndex]
@@ -111,19 +106,18 @@ class ScaSarsaFlp(Metaheuristic):
                 'binarizationOperator': dsActions[dsIndex][1]
             }
             flp.discretizationScheme = self.discretizationScheme
-            print('dsActions[dsIndex]:', dsActions[dsIndex])
 
             # Se binariza y evalua el fitness de todas las soluciones de la iteración t
             flp.process()
 
             # Se convierte el Best pisándolo
-            if np.max(flp.fitness) <= bestSolutionOldFitness:
+            if bestFitness <= bestSolutionOldFitness:
                 flp.fitness[bestSolutionIndex] = bestSolutionOldFitness
                 flp.binMatrix[bestSolutionIndex] = bestSolutionOldBin
             else:
                 print(f'fitness[solutionsRank[0]]***: {flp.fitness[bestSolutionIndex]}')
 
-            if np.max(flp.fitness) > globalBestFitness:
+            if bestFitness > globalBestFitness:
                 globalBestFitness = np.max(flp.fitness)
                 globalBestSolutionOldBin = bestSolutionOldBin
 
@@ -131,9 +125,9 @@ class ScaSarsaFlp(Metaheuristic):
                 flp.binMatrix, maxDiversities
             )
 
+            # Observamos, y recompensa/castigo. Actualizamos Tabla Q
             currentState = state[0]
-            # Observamos, y recompensa/castigo.  Actualizamos Tabla Q
-            agent.updateQtable(np.max(flp.fitness), dsIndex, currentState, oldState, iterationNumber)
+            agent.updateQtable(bestFitness, dsIndex, currentState, oldState, iterationNumber)
 
             iterationTimeEnd = np.round(time.time() - iterationTimeStart, 6)
             processTimeEnd = np.round(time.process_time() - processTimeStart, 6)
@@ -168,6 +162,7 @@ class ScaSarsaFlp(Metaheuristic):
             fitness=int(globalBestFitness),
             # bestSolution=bestSolution.tolist(),
             bestSolution=globalBestSolutionOldBin.tolist(),
+            # bestSolution=agent.getQTable().tolist(),
             executionId=self.executionId,
             startDatetime=startDatetime,
             endDatetime=datetime.now()
