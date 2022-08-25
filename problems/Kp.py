@@ -93,3 +93,5 @@ class Kp(Problem):
             self.fitness[i] = np.sum(np.multiply(self.binMatrix[i], self.valueItems))
 
         self.solutionsRanking = (-self.fitness).argsort()  # Ranking de los mejores fitness
+        bestSolutionOldFitness = self.fitness[self.solutionsRanking[0]]
+        bestSolutionOldBin = self.binMatrix[self.solutionsRanking[0]]

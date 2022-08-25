@@ -23,7 +23,6 @@ class Flp(Problem):
         self.binMatrix = np.random.randint(low=0, high=2, size=(self.populationSize, self.costs.shape[0]))
         self.fitness = np.zeros(self.populationSize)
         self.solutionsRanking = np.zeros(self.populationSize)
-        self.weightConstraints = np.array([], dtype=np.float64)
 
     def getGlobalOptimum(self):
         instances = {
@@ -89,7 +88,6 @@ class Flp(Problem):
         self.binMatrix = np.random.randint(low=0, high=2, size=(self.populationSize, self.costs.shape[0]))
         self.fitness = np.zeros(self.populationSize)
         self.solutionsRanking = np.zeros(self.populationSize)
-        self.weightConstraints = 1 / np.sum(self.customerBudgets)  # <<<
 
     def process(self, *args, **kwargs):
         # print('----------START process----------')
@@ -100,17 +98,17 @@ class Flp(Problem):
         ).binarize()
         # print('self.binMatrix:', self.binMatrix)
         for solution in range(self.binMatrix.shape[0]):
-            openFacilities = np.sum(self.binMatrix[solution])
+            openFacilities = np.sum(self.binMatrix[solution])                                                           # Contar cuántas tiendas están abiertas en la solución
             # print(f'[antes] solution: {solution} - open facilities: {openFacilities}')
             # print('[antes] self.binMatrix[solution]:', self.binMatrix[solution])
 
             if openFacilities > self.openFacilities:  # si hay mas de p tiendas abiertas
-                potentialCloseFacilities = np.where(self.binMatrix[solution] == 1)[0]
-                randIndexes = random.sample(set(potentialCloseFacilities), k=(openFacilities - self.openFacilities))
+                potentialCloseFacilities = np.where(self.binMatrix[solution] == 1)[0]                                   # Ver cuáles tiendas están abiertas (son potenciales a cerrar)
+                randIndexes = random.sample(set(potentialCloseFacilities), k=(openFacilities - self.openFacilities))    # Elegir aleatoriamente las tiendas a cerrar
                 self.binMatrix[solution][randIndexes] = 0
             elif openFacilities < self.openFacilities:  # si hay menos de p tiendas abiertas
-                potentialOpenNewFacilities = np.where(self.binMatrix[solution] == 0)[0]
-                randIndexes = random.sample(set(potentialOpenNewFacilities), k=(self.openFacilities - openFacilities))
+                potentialOpenNewFacilities = np.where(self.binMatrix[solution] == 0)[0]                                 # Ver cuáles tiendas están cerradas (son potenciales a abrir)
+                randIndexes = random.sample(set(potentialOpenNewFacilities), k=(self.openFacilities - openFacilities))  # Elegir aleatoriamente las tiendas a abrir
                 self.binMatrix[solution][randIndexes] = 1
 
             # openFacilities = np.sum(self.binMatrix[solution])
@@ -120,19 +118,22 @@ class Flp(Problem):
             facilitiesSelectedCosts = np.zeros((self.openFacilities, self.customers), dtype=np.int32)
             i = 0
             for facilityOpen in range(self.binMatrix[solution].shape[0]):
-                if self.binMatrix[solution][facilityOpen] == 1:
-                    facilitiesSelectedCosts[i] = self.costs[facilityOpen]
+                if self.binMatrix[solution][facilityOpen] == 1:                          # Comprobar si la tienda está abierta
+                    facilitiesSelectedCosts[i] = self.costs[facilityOpen]                # Agregar al arreglo los costos de transporte de cada cliente hacia la tienda
                     i += 1
             # print('facilitiesSelectedCosts:', facilitiesSelectedCosts)
 
             self.fitness[solution] = 0
-            for customer in range(self.customerBudgets.shape[0]):
-                facilitiesCosts = np.sort(facilitiesSelectedCosts[:, customer])
-                if facilitiesCosts[0] <= self.customerBudgets[customer]:
-                    self.fitness[solution] += facilitiesCosts[0]
+            for customer in range(self.customerBudgets.shape[0]):                        # Recorrer arreglo de presupuestos de clientes
+                facilitiesCosts = np.sort(facilitiesSelectedCosts[:, customer])          # Seleccionar solo los costos de transporte para el cliente actual y ordenarlos de menor a mayor
+                if facilitiesCosts[0] <= self.customerBudgets[customer]:                 # Se elige el menor costo y se comprueba si este es menor o igual al presupuesto del cliente
+                    self.fitness[solution] += facilitiesCosts[0]                         # Sumar al fitness de la solución
             # print('self.fitness[solution]:', self.fitness[solution])
 
-        self.solutionsRanking = (-self.fitness).argsort()
+        print('self.fitness:', self.fitness)
+        # self.solutionsRanking = (-self.fitness).argsort()                               # Se están ordenando los fitness de mayor a menor, debería ser al revés? (menos es mejor?)
+        self.solutionsRanking = self.fitness.argsort()  # np.argsort(self.fitness)
+        print('self.solutionsRanking:', self.solutionsRanking)
 
         # print('self.fitness:', self.fitness)
         # print('self.solutionsRanking:', self.solutionsRanking)

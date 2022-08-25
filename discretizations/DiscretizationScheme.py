@@ -24,7 +24,10 @@ Para t=0, es decir, si matrixBin es vacía, se utiliza por defecto binarizationO
 
 
 class DiscretizationScheme:
-    def __init__(self, continuousMatrix, binMatrix, solutionsRanking, transferFunction, binarizationOperator):
+    def __init__(
+        self, continuousMatrix, binMatrix, solutionsRanking, transferFunction, binarizationOperator,
+        discMatrix=None
+    ):
         self.continuousMatrix = continuousMatrix
         self.binMatrix = binMatrix
         self.solutionsRanking = solutionsRanking
@@ -32,9 +35,11 @@ class DiscretizationScheme:
         self.binarizationOperator = binarizationOperator
         self.bestRow = np.argmin(solutionsRanking)
 
+        self.discMatrix = discMatrix
+
         # Output
         self.probMatrix = np.zeros(self.continuousMatrix.shape)
-        self.binMatrixOut = np.zeros(self.binMatrix.shape)
+        self.binMatrixOut = np.zeros(self.binMatrix.shape) if binMatrix is not None else None
 
     # Transfer functions
     def tV1(self):
@@ -97,7 +102,7 @@ class DiscretizationScheme:
         randMatrix = np.random.uniform(low=0.0, high=1.0, size=self.continuousMatrix.shape)
         complementMatrix = np.abs(1 - self.binMatrix)
         self.binMatrixOut = np.multiply(np.greater_equal(self.probMatrix, randMatrix).astype(int), complementMatrix)
-        return self.binMatrixOut
+        # return self.binMatrixOut
 
     def bStatic(self):
         # print('bStatic')
@@ -163,3 +168,22 @@ class DiscretizationScheme:
         binarizationMethodsSwitcher.get(self.binarizationOperator.upper(), self.bStandard)()
 
         return self.binMatrixOut.astype(int)
+
+    def discretize(self):
+        transferFunctionsSwitcher = {
+            'V1': self.tV1,
+            'V2': self.tV2,
+            'V3': self.tV3,
+            'V4': self.tV4,
+            'S1': self.tS1,
+            'S2': self.tS2,
+            'S3': self.tS3,
+            'S4': self.tS4,
+            'Z1': self.tZ1,
+            'Z2': self.tZ2,
+            'Z3': self.tZ3,
+            'Z4': self.tZ4
+        }
+        transferFunctionsSwitcher.get(self.transferFunction.upper(), self.tV1)()
+
+        return self.probMatrix

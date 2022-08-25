@@ -139,7 +139,7 @@ def DimensionalHussain(Poblacion):
     D = Pob.shape[1]
     Medias = np.mean(Poblacion, axis=0)
 
-    MatrizDiversidad = np.divide(np.divide(np.abs(Medias - Pob),N),D)
+    MatrizDiversidad = np.divide(np.divide(np.abs(Medias - Pob), N), D)
 
     Diversidad = np.sum(MatrizDiversidad)
 
